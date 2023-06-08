@@ -5,8 +5,12 @@
 #-------------------------------------------------
 
 QT       += core gui widgets multimedia network
-#LIBS += -L/home/oem/hello/openssl-1.0.1e -lssl -lcrypto
-#INCLUDEPATH += /home/oem/hello/openssl-1.0.1e/include
+
+unix {
+        LIBS += -L//openssl-1.0.1e -lssl -lcrypto
+        INCLUDEPATH += /openssl-1.0.1e/include
+	QMAKE_LFLAGS += -no-pie
+}
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -16,9 +20,11 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    htmlparser.cpp
+    htmlparser.cpp \
+    entextbrowser.cpp
 
 HEADERS  += mainwindow.h \
-    htmlparser.h
+    htmlparser.h \
+    entextbrowser.h
 
 FORMS    += mainwindow.ui

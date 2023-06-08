@@ -10,17 +10,18 @@
 
 
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+MainWindow::MainWindow(const QString &articleIdStr_, QWidget *parent)
+    :articleIdStr(articleIdStr_), QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     manager.setParent(this);
     ui->playPushBtn->setEnabled(true);
 
-    parser = new HTMLParser("619666579", this);
+    connect(ui->enTextBrowser, SIGNAL(wordClicked(const QString&)), SLOT(on_wordClicked(const QString&)));
 
+    parser = new HTMLParser(articleIdStr, this);
     connect(parser, SIGNAL(parseDone(DataType*)), this, SLOT(on_parseDone(DataType*)));
+
     player = new QMediaPlayer(this);
 
     connect(player, static_cast<void(QMediaPlayer::*)(QMediaPlayer::State)>(&QMediaPlayer::stateChanged), this,
@@ -28,13 +29,7 @@ MainWindow::MainWindow(QWidget *parent) :
             if (state == QMediaPlayer::State::StoppedState) {
                 ui->playPushBtn->setText("i>");
                 ui->playPushBtn->setChecked(false);
-            } /*else if (state == QMediaPlayer::State::PausedState) {
-                ui->playPushBtn->setText("i>");
-                ui->playPushBtn->setChecked(false);
-            } else if (state == QMediaPlayer::State::PlayingState) {
-                ui->playPushBtn->setText("||");
-                ui->playPushBtn->setChecked(true);
-            }*/
+            }
     });
 }
 
@@ -45,18 +40,26 @@ MainWindow::~MainWindow()
 
 void MainWindow::uploadAndGetUrl() {
     QUrlQuery postData;
-    postData.addQueryItem("content", this->data->at(this->idx)->value("sentence"));
+    auto sentence = this->data->at(this->idx)->value("sentence");
+
+    ui->enTextBrowser->setText(sentence);
+
+    postData.addQueryItem("content", sentence);
     postData.addQueryItem("accent", "en");
     postData.addQueryItem("speed", "0");
     auto bytes = QUrl::toPercentEncoding(postData.toString().replace(' ', '+'), "=&+");
 //    QByteArray data = postData.toString(QUrl::FullyEncoded).toUtf8();
-    qDebug() << bytes;
 
     QNetworkRequest request;
 
     QSslConfiguration conf = request.sslConfiguration();
     conf.setPeerVerifyMode(QSslSocket::VerifyNone);
-    conf.setProtocol(QSsl::AnyProtocol);
+#if defined(Q_OS_LINUX)
+    auto protocol = QSsl::TlsV1SslV3;
+#else
+    auto protocol = QSsl::AnyProtocol;
+#endif
+    conf.setProtocol(protocol);
     request.setSslConfiguration(conf);
     const static QString postSentenceURL = "https://api.entts.com/post/";
     request.setUrl(QUrl(postSentenceURL));
@@ -67,12 +70,12 @@ void MainWindow::uploadAndGetUrl() {
     QNetworkReply *reply = manager.post(request, bytes);
 
     connect(reply, &QNetworkReply::finished, this, [this, reply](){
-        qDebug() << "upload finished";
+//        qDebug() << "upload finished";
         QRegularExpression sourceRE("<source src=\"([^\"]+)\" type=\"audio/mpeg\">");
         QRegularExpressionMatch match = sourceRE.match(reply->readAll());
         if (match.hasMatch()) {
             this->audioUrl = match.captured(1);
-            playAudio(match.captured(1));
+            playAudio(this->audioUrl);
             ui->playPushBtn->setChecked(true);
             ui->playPushBtn->setText("||");
         }
@@ -88,7 +91,7 @@ void MainWindow::uploadAndGetUrl() {
 }
 
 void MainWindow::on_playPushBtn_toggled(bool checked) {
-    qDebug() << "on_playPushBtn_toggled: " << checked;
+//    qDebug() << "on_playPushBtn_toggled: " << checked;
     ui->playPushBtn->setText(checked ? "||" : "i>");
     if (checked) {
         if (player->isAudioAvailable()) {
@@ -114,11 +117,15 @@ bool MainWindow::playAudio(const QString &url) {
 
 
 void MainWindow::on_parseDone(DataType *data) {
-    qDebug() << "done: " << data->count();
+    qDebug() << "Total: " << data->count();
     if (data->count()) {
         this->data = data;
         ui->nextPushBtn->setEnabled(true);
     }
+}
+
+void MainWindow::on_wordClicked(const QString& word) {
+    qDebug() << word;
 }
 
 
@@ -138,7 +145,7 @@ void MainWindow::on_nextPushBtn_clicked() {
 void MainWindow::on_prevPushBtn_clicked() {
     if (this->idx > -1) {
         --this->idx;
-        if (this->idx == -1) {
+        if (this->idx == 0) {
             ui->prevPushBtn->setEnabled(false);
         }
         uploadAndGetUrl();

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QNetworkAccessManager>
+#include <entextbrowser.h>
 
 
 class QMediaPlayer;
@@ -18,7 +19,7 @@ class MainWindow : public QMainWindow
 
 public:
     using DataType = QVector<QMap<QString, QString>* >;
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(const QString &pageNo_, QWidget *parent = 0);
     ~MainWindow();
 
 public slots:
@@ -27,6 +28,7 @@ public slots:
     void on_prevPushBtn_clicked();
 
     void on_parseDone(DataType *data);
+    void on_wordClicked(const QString &word);
 
 private:
     bool playAudio(const QString& url);
@@ -41,6 +43,7 @@ private:
     int idx = -1;
     QString audioUrl;
     QNetworkAccessManager manager;
+    QString articleIdStr;
 };
 
 #endif // MAINWINDOW_H

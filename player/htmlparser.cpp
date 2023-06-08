@@ -21,7 +21,12 @@ HTMLParser::HTMLParser(QString articleIdStr_, QObject *parent)
 
 void HTMLParser::connectZhiHuHost() {
     QSslConfiguration sslConfig = QSslConfiguration::defaultConfiguration();
-    sslConfig.setProtocol(QSsl::AnyProtocol);  // QSsl::TlsV1SslV3, QSsl::AnyProtocol
+#if defined(Q_OS_LINUX)
+    auto protocol = QSsl::TlsV1SslV3;
+#else
+    auto protocol = QSsl::AnyProtocol;
+#endif
+    sslConfig.setProtocol(protocol);  // QSsl::TlsV1SslV3, QSsl::AnyProtocol
     sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
 
     const static QString ZHIHUHOST = "zhuanlan.zhihu.com";
