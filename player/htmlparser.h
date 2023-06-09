@@ -12,22 +12,22 @@ class HTMLParser: public QObject
 {
     Q_OBJECT
 public:
-    using DataType = QVector<QMap<QString, QString>* >;
+    using DataType = QVector<QMap<QString, QString>>;
 
     HTMLParser(QString articleIdStr_, QObject *parent=nullptr);
 
 signals:
-    void parseDone(DataType *data);
+    void parseDone(const DataType& data);
 
 private:
-    void connectZhiHuHost();
-    void getHTMLContent();
+    void connHost();
+    void getHTML();
     const QString parseHTML(QNetworkReply *reply);
     void parseParas(const QString& parasStr);
 
     QString articleIdStr;
     QNetworkAccessManager manager;
-    DataType *data = nullptr;
+    DataType data;
 };
 
 #endif // HTMLPARSER_H

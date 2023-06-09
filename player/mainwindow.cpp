@@ -1,6 +1,7 @@
 ﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "htmlparser.h"
+#include <requests.h>
 
 #include <QDebug>
 #include <QMediaPlayer>
@@ -17,10 +18,11 @@ MainWindow::MainWindow(const QString &articleIdStr_, QWidget *parent)
     manager.setParent(this);
     ui->playPushBtn->setEnabled(true);
 
-    connect(ui->enTextBrowser, SIGNAL(wordClicked(const QString&)), SLOT(on_wordClicked(const QString&)));
+    ui->enTextEdit->setFont(QFont("Times", 16, QFont::Bold));
+    connect(ui->enTextEdit, SIGNAL(wordClicked(const QString&)), SLOT(on_wordClicked(const QString&)));
 
     parser = new HTMLParser(articleIdStr, this);
-    connect(parser, SIGNAL(parseDone(DataType*)), this, SLOT(on_parseDone(DataType*)));
+    connect(parser, SIGNAL(parseDone(const DataType&)), this, SLOT(on_parseDone(const DataType&)));
 
     player = new QMediaPlayer(this);
 
@@ -36,30 +38,25 @@ MainWindow::MainWindow(const QString &articleIdStr_, QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete parser;
+    delete player;
 }
 
-void MainWindow::uploadAndGetUrl() {
+void MainWindow::getAudioUrl() {
+    auto sentence = this->data->at(this->idx).value("sentence");
+    ui->enTextEdit->setText(sentence);
+
     QUrlQuery postData;
-    auto sentence = this->data->at(this->idx)->value("sentence");
-
-    ui->enTextBrowser->setText(sentence);
-
     postData.addQueryItem("content", sentence);
     postData.addQueryItem("accent", "en");
     postData.addQueryItem("speed", "0");
     auto bytes = QUrl::toPercentEncoding(postData.toString().replace(' ', '+'), "=&+");
-//    QByteArray data = postData.toString(QUrl::FullyEncoded).toUtf8();
+    // QByteArray data = postData.toString(QUrl::FullyEncoded).toUtf8();
 
     QNetworkRequest request;
-
     QSslConfiguration conf = request.sslConfiguration();
     conf.setPeerVerifyMode(QSslSocket::VerifyNone);
-#if defined(Q_OS_LINUX)
-    auto protocol = QSsl::TlsV1SslV3;
-#else
-    auto protocol = QSsl::AnyProtocol;
-#endif
-    conf.setProtocol(protocol);
+    conf.setProtocol(sslProtocol);
     request.setSslConfiguration(conf);
     const static QString postSentenceURL = "https://api.entts.com/post/";
     request.setUrl(QUrl(postSentenceURL));
@@ -67,31 +64,23 @@ void MainWindow::uploadAndGetUrl() {
     request.setRawHeader("accept", "*/*");
     request.setHeader(QNetworkRequest::UserAgentHeader, "curl/7.68.0");
     request.setHeader(QNetworkRequest::ContentLengthHeader, bytes.count());
-    QNetworkReply *reply = manager.post(request, bytes);
 
+    QNetworkReply *reply = manager.post(request, bytes);
     connect(reply, &QNetworkReply::finished, this, [this, reply](){
-//        qDebug() << "upload finished";
-        QRegularExpression sourceRE("<source src=\"([^\"]+)\" type=\"audio/mpeg\">");
+        const static QRegularExpression sourceRE("<source src=\"([^\"]+)\" type=\"audio/mpeg\">");
         QRegularExpressionMatch match = sourceRE.match(reply->readAll());
+        reply->close();
         if (match.hasMatch()) {
             this->audioUrl = match.captured(1);
             playAudio(this->audioUrl);
             ui->playPushBtn->setChecked(true);
             ui->playPushBtn->setText("||");
-        }
-
-    });
-
-    connect(reply,
-            static_cast<void(QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error),
-            this,
-        [=](QNetworkReply::NetworkError code){
-        qDebug() << "upload error: " << code;
-    });
+        }});
+    connect(reply, static_cast<void(QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error),
+            this, [=](QNetworkReply::NetworkError code){ qDebug() << "Error: " << code; });
 }
 
 void MainWindow::on_playPushBtn_toggled(bool checked) {
-//    qDebug() << "on_playPushBtn_toggled: " << checked;
     ui->playPushBtn->setText(checked ? "||" : "i>");
     if (checked) {
         if (player->isAudioAvailable()) {
@@ -116,10 +105,10 @@ bool MainWindow::playAudio(const QString &url) {
 }
 
 
-void MainWindow::on_parseDone(DataType *data) {
-    qDebug() << "Total: " << data->count();
-    if (data->count()) {
-        this->data = data;
+void MainWindow::on_parseDone(const DataType &data) {
+    qDebug() << "Total: " << data.count();
+    if (data.count()) {
+        this->data = &data;
         ui->nextPushBtn->setEnabled(true);
     }
 }
@@ -135,7 +124,7 @@ void MainWindow::on_nextPushBtn_clicked() {
         if (this->idx + 1 == this->data->count()) {
             ui->nextPushBtn->setEnabled(false);
         }
-        uploadAndGetUrl();
+        getAudioUrl();
         if (this->idx == 1) {
             ui->prevPushBtn->setEnabled(true);
         }
@@ -148,6 +137,6 @@ void MainWindow::on_prevPushBtn_clicked() {
         if (this->idx == 0) {
             ui->prevPushBtn->setEnabled(false);
         }
-        uploadAndGetUrl();
+        getAudioUrl();
     }
 }

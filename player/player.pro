@@ -21,10 +21,11 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     htmlparser.cpp \
-    entextbrowser.cpp
+    entextedit.cpp
 
 HEADERS  += mainwindow.h \
     htmlparser.h \
-    entextbrowser.h
+    entextedit.h \
+    requests.h
 
 FORMS    += mainwindow.ui

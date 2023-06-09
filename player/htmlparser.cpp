@@ -1,4 +1,6 @@
 #include "htmlparser.h"
+#include <requests.h>
+
 #include <QSsl>
 #include <QSslConfiguration>
 #include <QNetworkRequest>
@@ -13,33 +15,24 @@
 HTMLParser::HTMLParser(QString articleIdStr_, QObject *parent)
     :articleIdStr(articleIdStr_), QObject(parent)
 {
-    data = new DataType;
-    connectZhiHuHost();
-    getHTMLContent();
+    connHost();
+    getHTML();
 }
 
 
-void HTMLParser::connectZhiHuHost() {
-    QSslConfiguration sslConfig = QSslConfiguration::defaultConfiguration();
-#if defined(Q_OS_LINUX)
-    auto protocol = QSsl::TlsV1SslV3;
-#else
-    auto protocol = QSsl::AnyProtocol;
-#endif
-    sslConfig.setProtocol(protocol);  // QSsl::TlsV1SslV3, QSsl::AnyProtocol
-    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
-
-    const static QString ZHIHUHOST = "zhuanlan.zhihu.com";
-    manager.connectToHostEncrypted(ZHIHUHOST, 443, sslConfig);
+void HTMLParser::connHost() {
+    const static QString zhiHuHost = "zhuanlan.zhihu.com";
+    manager.connectToHostEncrypted(zhiHuHost, 443, getSslConf());
 }
 
 
-void HTMLParser::getHTMLContent() {
-    const static QString zhihuUrl = "https://zhuanlan.zhihu.com/p/%1";  // 619666579
+void HTMLParser::getHTML() {
+    const QString zhihuUrl = "https://zhuanlan.zhihu.com/p/%1";
     auto url = zhihuUrl.arg(articleIdStr);
     QNetworkReply *reply = manager.get(QNetworkRequest(QUrl(url)));
     QObject::connect(reply, &QNetworkReply::finished, this, [this, reply](){
         auto parasStr = this->parseHTML(reply);
+        reply->close();
         if (!parasStr.isEmpty()) {
             parseParas(parasStr);
         }
@@ -51,7 +44,7 @@ const QString HTMLParser::parseHTML(QNetworkReply *reply) {
     const static QString startTag = "<script id=\"js-initialData\" type=\"text/json\">";
     const static QString endTag = "</script>";
 
-    QRegularExpression jsonRE(QString("%1(.+)%2").arg(startTag, endTag), QRegularExpression::InvertedGreedinessOption);
+    const static QRegularExpression jsonRE(QString("%1(.+)%2").arg(startTag, endTag), QRegularExpression::InvertedGreedinessOption);
     QRegularExpressionMatch jsonMatch = jsonRE.match(reply->readAll());
     if (jsonMatch.hasMatch()) {
         QString jsonStr = jsonMatch.captured(1);
@@ -84,8 +77,7 @@ void HTMLParser::parseParas(const QString& parasStr) {
         QString firstLine = lines.at(0);
         QRegularExpressionMatch match = wordLineRE.match(firstLine);
         if (match.hasMatch()) {
-//            qDebug() << match.captured(1);
-            data->append(new QMap<QString, QString>{
+            data.append(QMap<QString, QString>{
                 {"dataId", dataId},
                 {"word", match.captured(1)},
                 {"wordCN", match.captured(2)},
@@ -95,6 +87,5 @@ void HTMLParser::parseParas(const QString& parasStr) {
 
         }
     }
-
     emit parseDone(data);  // send signals
 }

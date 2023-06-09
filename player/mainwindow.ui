@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>379</width>
-    <height>333</height>
+    <width>309</width>
+    <height>396</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,7 +24,7 @@
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>100</width>
+          <width>30</width>
           <height>20</height>
          </size>
         </property>
@@ -35,9 +35,15 @@
         <property name="enabled">
          <bool>false</bool>
         </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="maximumSize">
          <size>
-          <width>40</width>
+          <width>60</width>
           <height>16777215</height>
          </size>
         </property>
@@ -51,9 +57,15 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="maximumSize">
          <size>
-          <width>80</width>
+          <width>120</width>
           <height>16777215</height>
          </size>
         </property>
@@ -70,9 +82,15 @@
         <property name="enabled">
          <bool>false</bool>
         </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="maximumSize">
          <size>
-          <width>40</width>
+          <width>60</width>
           <height>16777215</height>
          </size>
         </property>
@@ -88,7 +106,7 @@
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>100</width>
+          <width>30</width>
           <height>20</height>
          </size>
         </property>
@@ -110,19 +128,48 @@
      </spacer>
     </item>
     <item row="2" column="0">
-     <widget class="EnTextBrowser" name="enTextBrowser">
+     <widget class="EnTextEdit" name="enTextEdit">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>1</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>120</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <property name="font">
        <font>
         <pointsize>16</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
        </font>
       </property>
       <property name="frameShadow">
        <enum>QFrame::Plain</enum>
       </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
       <property name="placeholderText">
        <string>sentence</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QTableView" name="wordTableView">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>60</height>
+       </size>
       </property>
      </widget>
     </item>
@@ -133,7 +180,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>379</width>
+     <width>309</width>
      <height>31</height>
     </rect>
    </property>
@@ -151,9 +198,9 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>EnTextBrowser</class>
-   <extends>QTextBrowser</extends>
-   <header location="global">entextbrowser.h</header>
+   <class>EnTextEdit</class>
+   <extends>QTextEdit</extends>
+   <header location="global">entextedit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
