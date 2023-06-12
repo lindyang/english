@@ -10,7 +10,7 @@ public:
     EnTextEdit(QWidget *parent=nullptr);
 
 signals:
-    void wordClicked(const QString& word);
+    void lookUpDone(const QVector<QStringList> &dictData);
 
 protected:
     void mousePressEvent(QMouseEvent *mouseEvent);

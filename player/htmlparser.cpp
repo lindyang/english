@@ -1,4 +1,4 @@
-#include "htmlparser.h"
+﻿#include "htmlparser.h"
 #include <requests.h>
 
 #include <QSsl>
@@ -40,20 +40,29 @@ void HTMLParser::getHTML() {
 }
 
 
+
 const QString HTMLParser::parseHTML(QNetworkReply *reply) {
+#ifdef Q_OS_LINUX
     const static QString startTag = "<script id=\"js-initialData\" type=\"text/json\">";
     const static QString endTag = "</script>";
-
-    const static QRegularExpression jsonRE(QString("%1(.+)%2").arg(startTag, endTag), QRegularExpression::InvertedGreedinessOption);
-    QRegularExpressionMatch jsonMatch = jsonRE.match(reply->readAll());
-    if (jsonMatch.hasMatch()) {
-        QString jsonStr = jsonMatch.captured(1);
-        QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
+#else
+    const static QString startTag = "<div class=\"RichText ztext Post-RichText css-1g0fqss\" options=\"\\[object Object\\]\">";
+    const static QString endTag = "</div>";
+#endif
+    const static QRegularExpression re(QString("%1(.+)%2").arg(startTag, endTag), QRegularExpression::InvertedGreedinessOption);
+    QRegularExpressionMatch match = re.match(reply->readAll());
+    if (match.hasMatch()) {
+        QString content = match.captured(1);
+#ifdef Q_OS_LINUX
+        QJsonDocument jsonDoc = QJsonDocument::fromJson(content.toUtf8());
         QJsonObject jsonObj = jsonDoc.object();
         for (auto key: QStringList{"initialState", "entities", "articles", articleIdStr}) {
             jsonObj = jsonObj.value(key).toObject();
         }
         return jsonObj.value("content").toString();
+#else
+        return content;
+#endif
     }
     return "";
 }
@@ -65,8 +74,6 @@ void HTMLParser::parseParas(const QString& parasStr) {
     const static QRegularExpression wordLineRE("([^(]+) ?\\([^)]+\\) ?\\([^)]+\\) ?([^(]+)");
 
     QRegularExpressionMatchIterator paraIter = paraRE.globalMatch(parasStr);
-    paraIter.next();
-    paraIter.next();
 
     while (paraIter.hasNext()) {
         QRegularExpressionMatch matchPara = paraIter.next();

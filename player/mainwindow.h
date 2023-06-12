@@ -8,6 +8,7 @@
 
 class QMediaPlayer;
 class HTMLParser;
+class DictModel;
 
 namespace Ui {
 class MainWindow;
@@ -28,7 +29,10 @@ public slots:
     void on_prevPushBtn_clicked();
 
     void on_parseDone(const DataType &data);
-    void on_wordClicked(const QString &word);
+    void on_wordClicked(const QVector<QStringList> &dictData);
+
+private slots:
+    void on_dictTableView_clicked(const QModelIndex &index);
 
 private:
     bool playAudio(const QString& url);
@@ -44,6 +48,9 @@ private:
     QString audioUrl;
     QNetworkAccessManager manager;
     QString articleIdStr;
+
+    DictModel *dictModel;
+    QMediaPlayer *pronPlayer = nullptr;
 };
 
 #endif // MAINWINDOW_H

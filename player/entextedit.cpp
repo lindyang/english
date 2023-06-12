@@ -1,4 +1,4 @@
-#include "entextedit.h"
+﻿#include "entextedit.h"
 #include "requests.h"
 
 #include <QMouseEvent>
@@ -44,54 +44,60 @@ void EnTextEdit::parseHTML(const QString& html) {
     const static QString start = "<div id=\"dictionary-entry-1\" class=\"entry-word-section-container\">";
     const static QString end = "<span id=\"anchor-seporator\"></span>";
     int startIdx, endIdx;
-    if ((startIdx = html.indexOf(start, 440000)) != -1) {
-        if ((endIdx = html.indexOf(end, startIdx)) != -1) {
-            qDebug() << "startIdx = " << startIdx << ", endIdx = " << endIdx;
-            auto divStr = html.mid(startIdx, endIdx - startIdx);
+    if ((startIdx = html.indexOf(start, 440000)) == -1 || (endIdx = html.indexOf(end, startIdx)) == -1) {
+        return;
+    }
 
-            static QRegularExpression syllableRe(" +<span class=\"word-syllables-entry\">([^ ]+)</span>");
-            auto syllableMatch = syllableRe.match(divStr);
-            if (syllableMatch.hasMatch()) {
-                auto syllable = syllableMatch.captured(1).replace("&#8203;", "");
-                auto conjugate = QString(syllable).replace("·", "");
-                qDebug() << syllable << ", " << conjugate;
-            } else {
-                static QRegularExpression wordRe(" +<h1 class=\"hword\">([^ ]+)</h1>");
-                auto wordMatch = wordRe.match(divStr); {
-                    if (wordMatch.hasMatch()) {
-                        auto conjugate = wordMatch.captured(1);
-                        qDebug() << conjugate;
-                    }
-                }
-            }
+    auto divStr = html.mid(startIdx, endIdx - startIdx);
+    QVector<QStringList> dictData;
+    QStringList firstItem;
 
-            static QRegularExpression mainTupleRe(
-                "\\s+<span .+>\\n\\s+<a .+ data-file=\"(\\w+)\" .+ \\(audio\\)\">([^ ]+)&nbsp;<img ",
-                QRegularExpression::MultilineOption);
-
-            QRegularExpressionMatch mainMatch = mainTupleRe.match(divStr);
-            if (mainMatch.hasMatch()) {
-                auto audio = mainMatch.captured(1);
-                auto phonetic = mainMatch.captured(2);
-                qDebug() << audio << ", " << phonetic;
-            }
-
-
-
-            static QRegularExpression remainingTupleRe(
-                "<span class=\"(?:fw-bold ure|if)\">([^ ]+)</span>\\n\\s+<(?:div|span) .+>\\n\\s+<a .+ data-file=\"(\\w+)\" .+ \\(audio\\)\">([^ ]+)&nbsp;<img ",
-                QRegularExpression::MultilineOption);
-
-            QRegularExpressionMatchIterator matchIter = remainingTupleRe.globalMatch(divStr);
-            while (matchIter.hasNext()) {
-                QRegularExpressionMatch match = matchIter.next();
-                QString conjugate = match.captured(1);
-                QString audio = match.captured(2);
-                QString phonetic = match.captured(3);
-                qDebug() << conjugate << ", " << audio << phonetic;
-            }
+    static QRegularExpression syllableRe(" +<span class=\"word-syllables-entry\">([^ ]+)</span>");
+    auto syllableMatch = syllableRe.match(divStr);
+    if (syllableMatch.hasMatch()) {
+        auto syllable = syllableMatch.captured(1).replace("&#8203;", "");
+        auto conjugate = QString(syllable).replace("·", "");
+        firstItem << syllable;  // --
+    } else {
+        static QRegularExpression wordRe(" +<h1 class=\"hword\">([^ ]+)</h1>");
+        auto wordMatch = wordRe.match(divStr);
+        if (wordMatch.hasMatch()) {
+            auto conjugate = wordMatch.captured(1);
+            firstItem << conjugate;
+        } else {
+            firstItem << "";
         }
     }
+
+    static QRegularExpression mainTupleRe(
+        "\\s+<span .+>\\n\\s+<a .+ data-file=\"(\\w+)\" .+ \\(audio\\)\">([^ ]+)&nbsp;<img ",
+        QRegularExpression::MultilineOption);
+
+    QRegularExpressionMatch mainMatch = mainTupleRe.match(divStr);
+    if (mainMatch.hasMatch()) {
+        auto audio = mainMatch.captured(1);
+        auto phonetic = mainMatch.captured(2);
+        firstItem << audio << phonetic;
+    } else {
+        firstItem << "" << "";
+    }
+    // ---------------------
+    dictData.append(firstItem);
+    // ---------------------
+
+    static QRegularExpression remainingTupleRe(
+        "<span class=\"(?:fw-bold ure|if)\">([^ ]+)</span>\\n\\s+<(?:div|span) .+>\\n\\s+<a .+ data-file=\"(\\w+)\" .+ \\(audio\\)\">([^ ]+)&nbsp;<img ",
+        QRegularExpression::MultilineOption);
+
+    QRegularExpressionMatchIterator matchIter = remainingTupleRe.globalMatch(divStr);
+    while (matchIter.hasNext()) {
+        QRegularExpressionMatch match = matchIter.next();
+        QString conjugate = match.captured(1);
+        QString audio = match.captured(2);
+        QString phonetic = match.captured(3);
+        dictData.append(QStringList{conjugate, audio, phonetic});
+    }
+    emit lookUpDone(dictData);  // send signal
 }
 
 void EnTextEdit::mousePressEvent(QMouseEvent *mouseEvent) {
@@ -102,7 +108,6 @@ void EnTextEdit::mousePressEvent(QMouseEvent *mouseEvent) {
         QString word = textCursor.selectedText();
         if (!word.isEmpty()) {
             getHTML(word);
-//            emit wordClicked(word);
         }
     }
     QTextEdit::mousePressEvent(mouseEvent);

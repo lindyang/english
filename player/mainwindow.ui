@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>309</width>
-    <height>396</height>
+    <height>456</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -132,7 +132,7 @@
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
-        <verstretch>1</verstretch>
+        <verstretch>0</verstretch>
        </sizepolicy>
       </property>
       <property name="minimumSize">
@@ -164,12 +164,23 @@
      </widget>
     </item>
     <item row="3" column="0">
-     <widget class="QTableView" name="wordTableView">
+     <widget class="QTableView" name="dictTableView">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>120</height>
+       </size>
+      </property>
       <property name="maximumSize">
        <size>
         <width>16777215</width>
-        <height>60</height>
+        <height>120</height>
        </size>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>16</pointsize>
+       </font>
       </property>
      </widget>
     </item>

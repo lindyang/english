@@ -7,7 +7,7 @@
 QT       += core gui widgets multimedia network
 
 unix {
-        LIBS += -L//openssl-1.0.1e -lssl -lcrypto
+        LIBS += -L/openssl-1.0.1e -lssl -lcrypto
         INCLUDEPATH += /openssl-1.0.1e/include
 	QMAKE_LFLAGS += -no-pie
 }
@@ -21,11 +21,13 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     htmlparser.cpp \
-    entextedit.cpp
+    entextedit.cpp \
+    dictmodel.cpp
 
 HEADERS  += mainwindow.h \
     htmlparser.h \
     entextedit.h \
-    requests.h
+    requests.h \
+    dictmodel.h
 
 FORMS    += mainwindow.ui
