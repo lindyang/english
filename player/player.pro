@@ -12,6 +12,13 @@ unix {
 	QMAKE_LFLAGS += -no-pie
 }
 
+win32 {
+        INCLUDEPATH += "C:/Program Files (x86)/Windows Kits/10/Include/10.0.19041.0/ucrt"
+        LIBS += -L"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/ucrt/x86"
+        LIBS += -L"C:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x86"
+        # rc.exe, rc.dll -> C:/Qt/Qt5.6.3/5.6.3/msvc2015\bin
+}
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = player

@@ -171,7 +171,7 @@ void MainWindow::on_dictTableView_clicked(const QModelIndex &index)
         const static QString pronUrl("https://media.merriam-webster.com/audio/prons/en/us/mp3");
         auto url = QString("%1/%2/%3.mp3").arg(pronUrl).arg(audio.mid(0, 1)).arg(audio);
         qDebug() << url;
-        pronPlayer->setMedia(QUrl("https://media.merriam-webster.com/audio/prons/en/us/mp3/s/scrawn01.mp3"));
+        pronPlayer->setMedia(QUrl(url));
         pronPlayer->play();
     }
 }
